@@ -36,6 +36,7 @@ public class GUI extends JFrame implements ActionListener, MouseListener {
     DefaultTableModel model;
     @SuppressWarnings("rawtypes")
     JComboBox searchComboBox;
+    @SuppressWarnings("rawtypes")
     JComboBox comboBoxPhone;
     JToggleButton dark;
     JTable table;
