@@ -1,25 +1,59 @@
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import com.mycompany.mycontacts.DBConnection;
 
 public class LoginTest {
     
     @Test
     void testValidLogin() {
-        // Test case for valid login
-        String username = "test_user";
-        String password = "test123";
-        
-        // Simple validation - in real applications, you would check against a database
-        assertTrue(username.equals("test_user") && password.equals("test123"));
+        try {
+            String email = "yousif012070@gmail.com";
+            String password = "123456";
+            
+            Connection conn = DBConnection.getConnection();
+            String query = "SELECT * FROM Users WHERE email = ? AND password = ?";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, email);
+            ps.setString(2, password);
+            
+            ResultSet rs = ps.executeQuery();
+            boolean loginSuccessful = rs.next();
+            
+            rs.close();
+            ps.close();
+            conn.close();
+            
+            assertTrue(loginSuccessful, "Login should be successful with valid credentials");
+        } catch (Exception e) {
+            fail("Test failed with exception: " + e.getMessage());
+        }
     }
     
     @Test
     void testInvalidLogin() {
-        // Test case for invalid login
-        String username = "wrong_user";
-        String password = "wrong_pass";
-        
-        // Simple validation - in real applications, you would check against a database
-        assertFalse(username.equals("test_user") && password.equals("test123"));
+        try {
+            String email = "wrong@example.com";
+            String password = "wrongpass";
+            
+            Connection conn = DBConnection.getConnection();
+            String query = "SELECT * FROM Users WHERE email = ? AND password = ?";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, email);
+            ps.setString(2, password);
+            
+            ResultSet rs = ps.executeQuery();
+            boolean loginSuccessful = rs.next();
+            
+            rs.close();
+            ps.close();
+            conn.close();
+            
+            assertFalse(loginSuccessful, "Login should fail with invalid credentials");
+        } catch (Exception e) {
+            fail("Test failed with exception: " + e.getMessage());
+        }
     }
 } 

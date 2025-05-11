@@ -2,6 +2,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import com.mycompany.mycontacts.DBConnection;
 
 public class GuiOperationsTest {
     
@@ -50,27 +54,180 @@ public class GuiOperationsTest {
     
     @Test
     void testDeleteContact() {
-        // Test deleting a contact
-        Contact contact = new Contact("Delete Me", "delete@email.com", "2222222222");
-        contacts.add(contact);
-        
-        contacts.remove(contact);
-        assertFalse(contacts.contains(contact));
-        assertEquals(0, contacts.size());
+        try {
+            // First, create a test user
+            String username = "test_user";
+            String email = "test_user@gmail.com";
+            String phone = "0123456789";
+            String work = "0123456789";
+            String password = "123456";
+            
+            Connection conn = DBConnection.getConnection();
+            
+            // Insert test user
+            String insertUserQuery = "INSERT INTO Users (username, email, phone, work, password) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(insertUserQuery);
+            ps.setString(1, username);
+            ps.setString(2, email);
+            ps.setString(3, phone);
+            ps.setString(4, work);
+            ps.setString(5, password);
+            ps.executeUpdate();
+            
+            // Get the user ID
+            String getIdQuery = "SELECT id FROM Users WHERE email = ?";
+            ps = conn.prepareStatement(getIdQuery);
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+            assertTrue(rs.next(), "Test user should exist");
+            int userId = rs.getInt("id");
+            
+            // Add a test contact
+            String firstName = "John";
+            String lastName = "Doe";
+            String contactEmail = "john.doe@example.com";
+            String mobilePhone = "0123456789";
+            String homePhone = "9876543210";
+            String address = "123 Test Street";
+            
+            String insertContactQuery = "INSERT INTO Contacts (userId, FirstName, LastName, Email, MobilePhone, HomePhone, Address) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            ps = conn.prepareStatement(insertContactQuery);
+            ps.setInt(1, userId);
+            ps.setString(2, firstName);
+            ps.setString(3, lastName);
+            ps.setString(4, contactEmail);
+            ps.setString(5, mobilePhone);
+            ps.setString(6, homePhone);
+            ps.setString(7, address);
+            ps.executeUpdate();
+            
+            // Get the contact ID
+            String getContactIdQuery = "SELECT ID FROM Contacts WHERE userId = ? AND Email = ?";
+            ps = conn.prepareStatement(getContactIdQuery);
+            ps.setInt(1, userId);
+            ps.setString(2, contactEmail);
+            rs = ps.executeQuery();
+            assertTrue(rs.next(), "Contact should exist");
+            int contactId = rs.getInt("ID");
+            
+            // Delete the contact
+            String deleteQuery = "DELETE FROM Contacts WHERE ID = ?";
+            ps = conn.prepareStatement(deleteQuery);
+            ps.setInt(1, contactId);
+            int rowsAffected = ps.executeUpdate();
+            assertEquals(1, rowsAffected, "One contact should be deleted");
+            
+            // Verify contact is deleted
+            String verifyQuery = "SELECT * FROM Contacts WHERE ID = ?";
+            ps = conn.prepareStatement(verifyQuery);
+            ps.setInt(1, contactId);
+            rs = ps.executeQuery();
+            assertFalse(rs.next(), "Contact should be deleted");
+            
+            // Clean up - delete the test user
+            String deleteUserQuery = "DELETE FROM Users WHERE id = ?";
+            ps = conn.prepareStatement(deleteUserQuery);
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+            
+            rs.close();
+            ps.close();
+            conn.close();
+            
+        } catch (Exception e) {
+            fail("Test failed with exception: " + e.getMessage());
+        }
     }
     
     @Test
     void testSearchContact() {
-        // Test searching for contacts
-        contacts.add(new Contact("Alice", "alice@email.com", "3333333333"));
-        contacts.add(new Contact("Bob", "bob@email.com", "4444444444"));
-        contacts.add(new Contact("Charlie", "charlie@email.com", "5555555555"));
-        
-        List<Contact> searchResults = contacts.stream()
-            .filter(c -> c.getName().toLowerCase().contains("a"))
-            .toList();
+        try {
+            // First, create a test user
+            String username = "test_user";
+            String email = "test_user@gmail.com";
+            String phone = "0123456789";
+            String work = "0123456789";
+            String password = "123456";
             
-        assertEquals(2, searchResults.size()); // Should find Alice and Charlie
+            Connection conn = DBConnection.getConnection();
+            
+            // Insert test user
+            String insertUserQuery = "INSERT INTO Users (username, email, phone, work, password) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(insertUserQuery);
+            ps.setString(1, username);
+            ps.setString(2, email);
+            ps.setString(3, phone);
+            ps.setString(4, work);
+            ps.setString(5, password);
+            ps.executeUpdate();
+            
+            // Get the user ID
+            String getIdQuery = "SELECT id FROM Users WHERE email = ?";
+            ps = conn.prepareStatement(getIdQuery);
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+            assertTrue(rs.next(), "Test user should exist");
+            int userId = rs.getInt("id");
+            
+            // Add a test contact
+            String firstName = "John";
+            String lastName = "Doe";
+            String contactEmail = "john.doe@example.com";
+            String mobilePhone = "0123456789";
+            String homePhone = "9876543210";
+            String address = "123 Test Street";
+            
+            String insertContactQuery = "INSERT INTO Contacts (userId, FirstName, LastName, Email, MobilePhone, HomePhone, Address) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            ps = conn.prepareStatement(insertContactQuery);
+            ps.setInt(1, userId);
+            ps.setString(2, firstName);
+            ps.setString(3, lastName);
+            ps.setString(4, contactEmail);
+            ps.setString(5, mobilePhone);
+            ps.setString(6, homePhone);
+            ps.setString(7, address);
+            ps.executeUpdate();
+            
+            // Test search by name
+            String searchQuery = "SELECT * FROM Contacts WHERE userId = ? AND (FirstName LIKE ? OR LastName LIKE ?)";
+            ps = conn.prepareStatement(searchQuery);
+            ps.setInt(1, userId);
+            ps.setString(2, "%John%");
+            ps.setString(3, "%John%");
+            rs = ps.executeQuery();
+            
+            assertTrue(rs.next(), "Search should find the contact");
+            assertEquals(firstName, rs.getString("FirstName"), "First name should match");
+            assertEquals(lastName, rs.getString("LastName"), "Last name should match");
+            
+            // Test search by email
+            searchQuery = "SELECT * FROM Contacts WHERE userId = ? AND Email LIKE ?";
+            ps = conn.prepareStatement(searchQuery);
+            ps.setInt(1, userId);
+            ps.setString(2, "%john.doe%");
+            rs = ps.executeQuery();
+            
+            assertTrue(rs.next(), "Search should find the contact by email");
+            assertEquals(contactEmail, rs.getString("Email"), "Email should match");
+            
+            // Clean up
+            String deleteContactQuery = "DELETE FROM Contacts WHERE userId = ?";
+            ps = conn.prepareStatement(deleteContactQuery);
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+            
+            String deleteUserQuery = "DELETE FROM Users WHERE id = ?";
+            ps = conn.prepareStatement(deleteUserQuery);
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+            
+            rs.close();
+            ps.close();
+            conn.close();
+            
+        } catch (Exception e) {
+            fail("Test failed with exception: " + e.getMessage());
+        }
     }
     
     @Test
@@ -204,6 +361,92 @@ public class GuiOperationsTest {
         Contact editedPerson = contacts.get(0);
         assertEquals("JOHN DOE", editedPerson.getName());
         assertEquals("JOHN@EMAIL.COM", editedPerson.getEmail());
+    }
+    
+    @Test
+    void testAddContact() {
+        try {
+            // First, create a test user to own the contact
+            String username = "test_user";
+            String email = "test_user@gmail.com";
+            String phone = "0123456789";
+            String work = "0123456789";
+            String password = "123456";
+            
+            Connection conn = DBConnection.getConnection();
+            
+            // Insert test user
+            String insertUserQuery = "INSERT INTO Users (username, email, phone, work, password) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(insertUserQuery);
+            ps.setString(1, username);
+            ps.setString(2, email);
+            ps.setString(3, phone);
+            ps.setString(4, work);
+            ps.setString(5, password);
+            ps.executeUpdate();
+            
+            // Get the user ID
+            String getIdQuery = "SELECT id FROM Users WHERE email = ?";
+            ps = conn.prepareStatement(getIdQuery);
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+            assertTrue(rs.next(), "Test user should exist");
+            int userId = rs.getInt("id");
+            
+            // Add a new contact
+            String firstName = "John";
+            String lastName = "Doe";
+            String contactEmail = "john.doe@example.com";
+            String mobilePhone = "0123456789";
+            String homePhone = "9876543210";
+            String address = "123 Test Street";
+            
+            String insertContactQuery = "INSERT INTO Contacts (userId, FirstName, LastName, Email, MobilePhone, HomePhone, Address) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            ps = conn.prepareStatement(insertContactQuery);
+            ps.setInt(1, userId);
+            ps.setString(2, firstName);
+            ps.setString(3, lastName);
+            ps.setString(4, contactEmail);
+            ps.setString(5, mobilePhone);
+            ps.setString(6, homePhone);
+            ps.setString(7, address);
+            
+            int rowsAffected = ps.executeUpdate();
+            assertTrue(rowsAffected > 0, "Contact should be added successfully");
+            
+            // Verify the contact was added
+            String verifyQuery = "SELECT * FROM Contacts WHERE userId = ? AND Email = ?";
+            ps = conn.prepareStatement(verifyQuery);
+            ps.setInt(1, userId);
+            ps.setString(2, contactEmail);
+            rs = ps.executeQuery();
+            
+            assertTrue(rs.next(), "Contact should exist in database");
+            assertEquals(firstName, rs.getString("FirstName"), "First name should match");
+            assertEquals(lastName, rs.getString("LastName"), "Last name should match");
+            assertEquals(contactEmail, rs.getString("Email"), "Email should match");
+            assertEquals(mobilePhone, rs.getString("MobilePhone"), "Mobile phone should match");
+            assertEquals(homePhone, rs.getString("HomePhone"), "Home phone should match");
+            assertEquals(address, rs.getString("Address"), "Address should match");
+            
+            // Clean up - delete the test contact and user
+            String deleteContactQuery = "DELETE FROM Contacts WHERE userId = ?";
+            ps = conn.prepareStatement(deleteContactQuery);
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+            
+            String deleteUserQuery = "DELETE FROM Users WHERE id = ?";
+            ps = conn.prepareStatement(deleteUserQuery);
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+            
+            rs.close();
+            ps.close();
+            conn.close();
+            
+        } catch (Exception e) {
+            fail("Test failed with exception: " + e.getMessage());
+        }
     }
 }
 
